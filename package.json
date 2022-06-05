@@ -1,0 +1,43 @@
+{
+  "name": "issue-tracker-api-azure-cosmos",
+  "version": "0.0.1",
+  "description": "Issue Tracker API built with Azure Cosmos.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "start-dev": "npx nodemon -r dotenv/config server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paulsmithkc/issue-tracker-api-azure-cosmos.git"
+  },
+  "keywords": [
+    "issue",
+    "tracker",
+    "rest",
+    "api",
+    "express",
+    "nodejs",
+    "azure",
+    "cosmos",
+    "db",
+    "database"
+  ],
+  "author": "Paul Smith",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/paulsmithkc/issue-tracker-api-azure-cosmos/issues"
+  },
+  "homepage": "https://github.com/paulsmithkc/issue-tracker-api-azure-cosmos#readme",
+  "dependencies": {
+    "@azure/cosmos": "^3.16.1",
+    "config": "^3.3.7",
+    "debug": "^4.3.4",
+    "express": "^4.18.1",
+    "joi": "^17.6.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.0.1"
+  }
+}
