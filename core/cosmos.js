@@ -94,6 +94,19 @@ async function replaceItemInContainer(container, id, partitionKey, body) {
   return resource;
 }
 
+/**
+ * Remove an existing item from a container.
+ * @param {Container} container
+ * @param {string} id
+ * @param {string} partitionKey
+ * @returns {any}
+ */
+async function removeItemFromContainer(container, id, partitionKey) {
+  // debugCosmos('deleting item', id, partitionKey)
+  const { resource } = await container.item(id, partitionKey).delete();
+  return resource;
+}
+
 // open a connection
 const { client, database, container } = await connect();
 
@@ -104,4 +117,6 @@ export default {
   addIssue: (newItem) => addItemToContainer(container, newItem),
   replaceIssue: (issueId, issueType, issueData) =>
     replaceItemInContainer(container, issueId, issueType, issueData),
+  removeIssue: (issueId, issueType) =>
+    removeItemFromContainer(container, issueId, issueType),
 };

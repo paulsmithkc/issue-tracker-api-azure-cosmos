@@ -69,4 +69,19 @@ router.put(
   })
 );
 
+router.delete(
+  '/:issueId',
+  asyncCatch(async (req, res, next) => {
+    const issueId = req.params.issueId;
+    const issue = await cosmos.getIssueById(issueId);
+
+    if (!issue) {
+      res.status(404).json({ message: 'Issue not found.', id: issueId });
+    } else {
+      const resource = await cosmos.removeIssue(issueId, issue.type);
+      res.json({ message: 'Issue removed.', id: issueId, resource });
+    }
+  })
+);
+
 export default router;
