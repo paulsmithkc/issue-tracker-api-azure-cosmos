@@ -76,8 +76,22 @@ async function getItemByIdFromContainer(container, id) {
  * @returns {any}
  */
 async function addItemToContainer(container, newItem) {
-  const { resource: createdItem } = await container.items.create(newItem);
-  return createdItem;
+  const { resource } = await container.items.create(newItem);
+  return resource;
+}
+
+/**
+ * Replace an existing item within a container.
+ * @param {Container} container
+ * @param {string} id
+ * @param {string} partitionKey
+ * @param {any} body
+ * @returns {any}
+ */
+async function replaceItemInContainer(container, id, partitionKey, body) {
+  // debugCosmos('replacing item', id, partitionKey, body)
+  const { resource } = await container.item(id, partitionKey).replace(body);
+  return resource;
 }
 
 // open a connection
@@ -88,4 +102,6 @@ export default {
   getAllIssues: () => getAllItemsFromContainer(container),
   getIssueById: (id) => getItemByIdFromContainer(container, id),
   addIssue: (newItem) => addItemToContainer(container, newItem),
+  replaceIssue: (issueId, issueType, issueData) =>
+    replaceItemInContainer(container, issueId, issueType, issueData),
 };

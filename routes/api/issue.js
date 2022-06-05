@@ -22,6 +22,7 @@ router.get(
     res.json(issues);
   })
 );
+
 router.get(
   '/:issueId',
   asyncCatch(async (req, res, next) => {
@@ -30,18 +31,41 @@ router.get(
     if (issue) {
       res.json(issue);
     } else {
-      res.status(404).json({ id: issueId, message: 'Issue not found.' });
+      res.status(404).json({ message: 'Issue not found.', id: issueId });
     }
   })
 );
+
 router.put(
   '/new',
   validBody(issueSchema),
   asyncCatch(async (req, res, next) => {
+    const issueId = nanoid();
     const newIssue = req.body;
-    newIssue.id = nanoid();
-    const createdIssue = await cosmos.addIssue(newIssue);
-    res.json({ id: createdIssue.id, message: 'Issue created.', });
+    newIssue.id = issueId;
+
+    const resource = await cosmos.addIssue(newIssue);
+    res.json({ message: 'Issue created.', id: issueId, resource });
+  })
+);
+
+router.put(
+  '/:issueId',
+  validBody(issueSchema),
+  asyncCatch(async (req, res, next) => {
+    const issueId = req.params.issueId;
+    const issueData = req.body;
+    const issue = await cosmos.getIssueById(issueId);
+
+    if (!issue) {
+      res.status(404).json({ message: 'Issue not found.', id: issueId });
+    } else {
+      // issue.type = issueData.type;
+      issue.title = issueData.title;
+      issue.description = issueData.description;
+      const resource = await cosmos.replaceIssue(issueId, issue.type, issue);
+      res.json({ message: 'Issue updated.', id: issueId, resource });
+    }
   })
 );
 
