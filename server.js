@@ -1,12 +1,14 @@
 import express from 'express';
+import helmet from 'helmet'
 import config from 'config';
 import debug from 'debug';
 
-// create debug channel
+// create debug channels
 const debugStartup = debug('app:startup');
 
 // create and configure app
 const app = express();
+app.use(helmet());
 
 // routes
 app.get('/', (req, res) => res.json({ message: 'Server Running.' }));
