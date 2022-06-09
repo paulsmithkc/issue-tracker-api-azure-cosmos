@@ -7,18 +7,18 @@ const debugCosmos = debug('app:core:cosmos');
 
 /**
  * Open a connection to our Cosmos database.
- * Also creates the database and/or container if needed.
+ * Also creates the database and/or containers if needed.
+ * @returns {Promise<{
+ *  client: CosmosClient,
+ *  database: Database,
+ *  issuesContainer: Container,
+ *  projectsContainer: Container,
+ *  usersContainer: Container
+ * }>}
  */
 async function connect() {
   // get cosmos configuration
-  const {
-    endpoint,
-    key,
-    databaseId,
-    containerId,
-    partitionKey,
-    offerThroughput,
-  } = config.get('cosmos');
+  const { endpoint, key, databaseId } = config.get('cosmos');
 
   // create a client
   const client = new CosmosClient({ endpoint, key });
@@ -29,22 +29,44 @@ async function connect() {
   });
   debugCosmos(`Created database: ${database.id}`);
 
-  // Create the container, if it does not exist
-  const { container } = await client
-    .database(databaseId)
+  // Create the necessary containers
+  const issuesContainer = await createContainer(database, 'Issues', ['/issueId']);
+  const projectsContainer = await createContainer(database, 'Projects', ['/projectId']);
+  const usersContainer = await createContainer(database, 'Users', ['/userId']);
+
+  return {
+    client,
+    database,
+    issuesContainer,
+    projectsContainer,
+    usersContainer,
+  };
+}
+
+/**
+ * Creates a new container in our Cosmos database.
+ * @param {Database} database
+ * @param {string} containerId
+ * @param {string[]} partitionPaths
+ * @returns {Promise<Container>}
+ */
+async function createContainer(database, containerId, partitionPaths) {
+  const { container } = await database
     .containers.createIfNotExists(
-      { id: containerId, partitionKey },
-      { offerThroughput: parseInt(offerThroughput) }
+      {
+        id: containerId,
+        partitionKey: { kind: 'Hash', paths: partitionPaths },
+      },
+      { offerThroughput: 400 }
     );
   debugCosmos(`Created container: ${container.id}`);
-
-  return { client, database, container };
+  return container;
 }
 
 /**
  * Fetches all items from a container and returns them as an array.
  * @param {Container} container
- * @returns {Array<any>}
+ * @returns {Promise<any[]>}
  */
 async function getAllItemsFromContainer(container) {
   const querySpec = { query: 'SELECT * FROM c' };
@@ -57,7 +79,8 @@ async function getAllItemsFromContainer(container) {
  * Fetches a specific item from a container.
  * @param {Container} container
  * @param {string} id
- * @returns {any}
+ * @returns {Promise<any>}
+ * @deprecated Use readItemFromContainer instead.
  */
 async function getItemByIdFromContainer(container, id) {
   const querySpec = {
@@ -70,10 +93,23 @@ async function getItemByIdFromContainer(container, id) {
 }
 
 /**
+ * Fetches a specific item from a container.
+ * @param {Container} container
+ * @param {string} id
+ * @param {string} partitionKey
+ * @returns {Promise<any>}
+ */
+ async function readItemFromContainer(container, id, partitionKey) {
+  const result = await container.item(id, partitionKey).read();
+  debugCosmos('read', result);
+  return result.resource;
+}
+
+/**
  * Add a new item to a container.
  * @param {Container} container
  * @param {any} newItem
- * @returns {any}
+ * @returns {Promise<any>}
  */
 async function addItemToContainer(container, newItem) {
   const { resource } = await container.items.create(newItem);
@@ -86,7 +122,7 @@ async function addItemToContainer(container, newItem) {
  * @param {string} id
  * @param {string} partitionKey
  * @param {any} body
- * @returns {any}
+ * @returns {Promise<any>}
  */
 async function replaceItemInContainer(container, id, partitionKey, body) {
   // debugCosmos('replacing item', id, partitionKey, body)
@@ -99,7 +135,7 @@ async function replaceItemInContainer(container, id, partitionKey, body) {
  * @param {Container} container
  * @param {string} id
  * @param {string} partitionKey
- * @returns {any}
+ * @returns {Promise<any>}
  */
 async function removeItemFromContainer(container, id, partitionKey) {
   // debugCosmos('deleting item', id, partitionKey)
@@ -108,15 +144,16 @@ async function removeItemFromContainer(container, id, partitionKey) {
 }
 
 // open a connection
-const { client, database, container } = await connect();
+const { client, database, issuesContainer, projectsContainer, usersContainer } =
+  await connect();
 
 // export
 export default {
-  getAllIssues: () => getAllItemsFromContainer(container),
-  getIssueById: (id) => getItemByIdFromContainer(container, id),
-  addIssue: (newItem) => addItemToContainer(container, newItem),
-  replaceIssue: (issueId, issueType, issueData) =>
-    replaceItemInContainer(container, issueId, issueType, issueData),
+  getAllIssues: () => getAllItemsFromContainer(issuesContainer),
+  getIssueById: (id) => readItemFromContainer(issuesContainer, id, id),
+  addIssue: (newItem) => addItemToContainer(issuesContainer, newItem),
+  replaceIssue: (issueId, issueData) =>
+    replaceItemInContainer(issuesContainer, issueId, issueId, issueData),
   removeIssue: (issueId, issueType) =>
-    removeItemFromContainer(container, issueId, issueType),
+    removeItemFromContainer(issuesContainer, issueId, issueId),
 };

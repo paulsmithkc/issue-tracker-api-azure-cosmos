@@ -6,9 +6,6 @@
   "cosmos": {
     "endpoint": "https://localhost:8081",
     "key": "",
-    "databaseId": "IssueTracker",
-    "containerId": "Issues",
-    "partitionKey": { "kind": "Hash", "paths": ["/type"] },
-    "offerThroughput": 400
+    "databaseId": "IssueTracker"
   }
 }
