@@ -12,7 +12,7 @@ const router = express.Router();
 const issueSchema = Joi.object({
   title: Joi.string().required(),
   description: Joi.string().required(),
-  priority: Joi.string().required(),
+  priority: Joi.string().allow('').required(),  // optional
 });
 
 router.get(
