@@ -7,6 +7,8 @@ import { nanoid } from 'nanoid';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Joi from 'joi';
+import _ from 'lodash';
+import expressAuth from '@merlin4/express-auth';
 import { Users } from '../../core/cosmos.js';
 
 const debugApi = debug('app:api:auth');
@@ -63,7 +65,13 @@ router.post(
     const token = await generateToken(newUser);
 
     const resource = await Users.add(newUser);
-    res.json({ message: 'User registered.', email, userId, token, tokenExpiresIn });
+    res.json({
+      message: 'User registered.',
+      email,
+      userId,
+      token,
+      tokenExpiresIn,
+    });
     debugApi(`User ${userId} registered.`);
   })
 );
@@ -82,8 +90,28 @@ router.post(
     } else {
       const { userId } = user;
       const token = await generateToken(user);
-      res.json({ message: 'User logged in.', email, userId, token, tokenExpiresIn });
+      res.json({
+        message: 'User logged in.',
+        email,
+        userId,
+        token,
+        tokenExpiresIn,
+      });
       debugApi(`User ${userId} logged in.`);
+    }
+  })
+);
+
+router.get(
+  '/auth/me',
+  expressAuth.isLoggedIn(),
+  asyncCatch(async (req, res, next) => {
+    const { userId, email } = req.auth;
+    const user = await Users.getById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.', userId });
+    } else {
+      return res.json(_.pick(user, 'userId', 'email', 'givenName', 'familyName'));
     }
   })
 );
