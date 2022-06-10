@@ -56,8 +56,7 @@ async function createContainer(database, containerId, partitionPaths) {
       {
         id: containerId,
         partitionKey: { kind: 'Hash', paths: partitionPaths },
-      },
-      { offerThroughput: 400 }
+      }
     );
   debugCosmos(`Created container: ${container.id}`);
   return container;
