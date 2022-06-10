@@ -3,7 +3,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import config from 'config';
 import debug from 'debug';
-import cosmos from './core/cosmos.js';
+//import cosmos from './core/cosmos.js';
+import projectApi from './routes/api/project.js';
 import issueApi from './routes/api/issue.js';
 
 // create debug channels
@@ -19,7 +20,8 @@ app.use(express.json());
 // routes
 app.get('/', (req, res) => res.json({ message: 'Server Running.' }));
 app.get('/ping', (req, res) => res.json({ message: 'Ping.', now: new Date() }));
-app.use('/api/issue', issueApi);
+app.use('/api', projectApi);
+app.use('/api', issueApi);
 
 // error handlers
 app.use((req, res, next) => {
