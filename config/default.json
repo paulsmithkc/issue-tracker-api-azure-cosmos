@@ -1,4 +1,5 @@
 {
+  "tlsRejectUnauthorized": "1",
   "http": {
     "host": "localhost",
     "port": 3000

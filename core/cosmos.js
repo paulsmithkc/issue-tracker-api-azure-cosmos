@@ -4,6 +4,7 @@ import { CosmosClient, Database, Container } from '@azure/cosmos';
 
 // create debug channels
 const debugCosmos = debug('app:core:cosmos');
+const debugError = debug('app:error');
 
 /**
  * Open a connection to our Cosmos database.
@@ -17,38 +18,50 @@ const debugCosmos = debug('app:core:cosmos');
  * }>}
  */
 async function connect() {
-  // get cosmos configuration
-  const { endpoint, key, databaseId } = config.get('cosmos');
+  try {
+    // get cosmos configuration
+    const { endpoint, key, databaseId } = config.get('cosmos');
+    const tlsRejectUnauthorized = config.get('tlsRejectUnauthorized');
 
-  // create a client
-  const client = new CosmosClient({ endpoint, key });
+    // log cosmos config
+    debugCosmos('endpoint =', endpoint);
+    debugCosmos('key =', key);
+    debugCosmos('databaseId =', key);
+    debugCosmos('tlsRejectUnauthorized =', tlsRejectUnauthorized);
 
-  // Create the database, if it does not exist
-  const { database } = await client.databases.createIfNotExists({
-    id: databaseId,
-  });
-  debugCosmos(`Created database: ${database.id}`);
+    // create a client
+    const client = new CosmosClient({ endpoint, key });
 
-  // Create the necessary containers
-  const usersContainer = await createContainer(database, 'Users', '/userId');
-  const projectsContainer = await createContainer(
-    database,
-    'Projects',
-    '/projectId'
-  );
-  const issuesContainer = await createContainer(
-    database,
-    'Issues',
-    '/_partitionKey'
-  );
+    // Create the database, if it does not exist
+    const { database } = await client.databases.createIfNotExists({
+      id: databaseId,
+    });
+    debugCosmos(`Created database: ${database.id}`);
 
-  return {
-    client,
-    database,
-    issuesContainer,
-    projectsContainer,
-    usersContainer,
-  };
+    // Create the necessary containers
+    const usersContainer = await createContainer(database, 'Users', '/userId');
+    const projectsContainer = await createContainer(
+      database,
+      'Projects',
+      '/projectId'
+    );
+    const issuesContainer = await createContainer(
+      database,
+      'Issues',
+      '/_partitionKey'
+    );
+
+    return {
+      client,
+      database,
+      issuesContainer,
+      projectsContainer,
+      usersContainer,
+    };
+  } catch (err) {
+    debugError(err.message);
+    throw new Error('Failed to connect to Cosmos DB: ' + err.message);
+  }
 }
 
 /**
@@ -120,7 +133,7 @@ async function getItemByIdFromContainer(container, id) {
  * @param {string} email
  * @returns {Promise<any>}
  */
- async function getUserByEmail(container, email) {
+async function getUserByEmail(container, email) {
   debugCosmos('selecting user by email', container.id, email);
   const querySpec = {
     query: 'SELECT * FROM c WHERE c.email = @email',
