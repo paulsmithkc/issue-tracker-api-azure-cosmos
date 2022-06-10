@@ -21,6 +21,13 @@ const registerSchema = Joi.object({
   password: Joi.string().min(8).required(),
 });
 
+const updateSchema = Joi.object({
+  givenName: Joi.string(),
+  familyName: Joi.string(),
+  email: Joi.string().email(),
+  password: Joi.string().min(8),
+});
+
 const loginSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
@@ -67,7 +74,6 @@ router.post(
     const resource = await Users.add(newUser);
     res.json({
       message: 'User registered.',
-      email,
       userId,
       token,
       tokenExpiresIn,
@@ -84,7 +90,7 @@ router.post(
 
     const user = await Users.getByEmail(email);
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-      return res
+      res
         .status(400)
         .json({ message: 'Incorrect email or password.', email });
     } else {
@@ -92,7 +98,6 @@ router.post(
       const token = await generateToken(user);
       res.json({
         message: 'User logged in.',
-        email,
         userId,
         token,
         tokenExpiresIn,
@@ -106,14 +111,50 @@ router.get(
   '/auth/me',
   expressAuth.isLoggedIn(),
   asyncCatch(async (req, res, next) => {
-    const { userId, email } = req.auth;
+    const { userId } = req.auth;
+
     const user = await Users.getById(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found.', userId });
+      res.status(404).json({ message: 'User not found.', userId });
     } else {
-      return res.json(_.pick(user, 'userId', 'email', 'givenName', 'familyName'));
+      res.json(_.pick(user, 'userId', 'email', 'givenName', 'familyName'));
+      debugApi(`User ${userId} read.`);
     }
   })
 );
+
+router.put(
+  '/auth/me',
+  expressAuth.isLoggedIn(),
+  validBody(updateSchema),
+  asyncCatch(async (req, res, next) => {
+    const { userId } = req.auth;
+    const userData = req.body;
+
+    const user = await Users.getById(userId);
+    if (!user) {
+      res.status(404).json({ message: 'User not found.', userId });
+    } else {
+      for (const key in userData) {
+        if (key === 'password') {
+          user.passwordHash = await bcrypt.hash(userData.password, passwordSaltRounds);
+        } else {
+          user[key] = userData[key];
+        }
+      }
+
+      const token = await generateToken(user);
+      const resource = await Users.replace(userId, user);
+      res.json({
+        message: 'User updated.',
+        userId,
+        token,
+        tokenExpiresIn,
+      });
+      debugApi(`User ${userId} updated.`);
+    }
+  })
+);
+
 
 export default router;
