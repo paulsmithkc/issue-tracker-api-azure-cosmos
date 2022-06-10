@@ -8,7 +8,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import Joi from 'joi';
 import _ from 'lodash';
-import expressAuth from '@merlin4/express-auth';
+import { isLoggedIn } from '@merlin4/express-auth';
 import { Users } from '../../core/cosmos.js';
 
 const debugApi = debug('app:api:auth');
@@ -109,7 +109,7 @@ router.post(
 
 router.get(
   '/auth/me',
-  expressAuth.isLoggedIn(),
+  isLoggedIn(),
   asyncCatch(async (req, res, next) => {
     const { userId } = req.auth;
 
@@ -125,7 +125,7 @@ router.get(
 
 router.put(
   '/auth/me',
-  expressAuth.isLoggedIn(),
+  isLoggedIn(),
   validBody(updateSchema),
   asyncCatch(async (req, res, next) => {
     const { userId } = req.auth;
@@ -150,6 +150,7 @@ router.put(
         userId,
         token,
         tokenExpiresIn,
+        // user: _.pick(resource, 'userId', 'email', 'givenName', 'familyName')
       });
       debugApi(`User ${userId} updated.`);
     }

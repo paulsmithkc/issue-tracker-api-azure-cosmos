@@ -32,7 +32,7 @@
   "homepage": "https://github.com/paulsmithkc/issue-tracker-api-azure-cosmos#readme",
   "dependencies": {
     "@azure/cosmos": "^3.16.1",
-    "@merlin4/express-auth": "^0.0.3",
+    "@merlin4/express-auth": "^0.0.5",
     "bcrypt": "^5.0.1",
     "config": "^3.3.7",
     "cookie-parser": "^1.4.6",
