@@ -30,13 +30,17 @@ async function connect() {
   debugCosmos(`Created database: ${database.id}`);
 
   // Create the necessary containers
-  const issuesContainer = await createContainer(database, 'Issues', [
-    '/issueId',
-  ]);
-  const projectsContainer = await createContainer(database, 'Projects', [
-    '/projectId',
-  ]);
-  const usersContainer = await createContainer(database, 'Users', ['/userId']);
+  const issuesContainer = await createContainer(
+    database,
+    'Issues',
+    '/_partitionKey'
+  );
+  const projectsContainer = await createContainer(
+    database,
+    'Projects',
+    '/projectId'
+  );
+  const usersContainer = await createContainer(database, 'Users', '/userId');
 
   return {
     client,
@@ -51,13 +55,13 @@ async function connect() {
  * Creates a new container in our Cosmos database.
  * @param {Database} database
  * @param {string} containerId
- * @param {string[]} partitionPaths
+ * @param {string} partitionKey
  * @returns {Promise<Container>}
  */
-async function createContainer(database, containerId, partitionPaths) {
+async function createContainer(database, containerId, partitionKey) {
   const { container } = await database.containers.createIfNotExists({
     id: containerId,
-    partitionKey: { kind: 'Hash', paths: partitionPaths },
+    partitionKey: partitionKey,
   });
   debugCosmos(`Created container: ${container.id}`);
   return container;
@@ -70,6 +74,22 @@ async function createContainer(database, containerId, partitionPaths) {
  */
 async function getAllItemsFromContainer(container) {
   const querySpec = { query: 'SELECT * FROM c' };
+  const query = container.items.query(querySpec);
+  const { resources: items } = await query.fetchAll();
+  return items;
+}
+
+/**
+ * Fetches items from a container, for a specific project, and returns them as an array.
+ * @param {Container} container
+ * @param {string} projectId
+ * @returns {Promise<any[]>}
+ */
+async function getAllItemsForProject(container, projectId) {
+  const querySpec = {
+    query: 'SELECT * FROM c WHERE c.projectId = @projectId',
+    parameters: [{ name: '@projectId', value: projectId }],
+  };
   const query = container.items.query(querySpec);
   const { resources: items } = await query.fetchAll();
   return items;
@@ -100,8 +120,9 @@ async function getItemByIdFromContainer(container, id) {
  * @returns {Promise<any>}
  */
 async function readItemFromContainer(container, id, partitionKey) {
+  debugCosmos('reading item', container.id, id, partitionKey);
   const result = await container.item(id, partitionKey).read();
-  debugCosmos('read', result);
+  // debugCosmos('read', result);
   return result.resource;
 }
 
@@ -112,6 +133,7 @@ async function readItemFromContainer(container, id, partitionKey) {
  * @returns {Promise<any>}
  */
 async function addItemToContainer(container, newItem) {
+  debugCosmos('creating item', container.id, newItem.id);
   const { resource } = await container.items.create(newItem);
   return resource;
 }
@@ -125,7 +147,7 @@ async function addItemToContainer(container, newItem) {
  * @returns {Promise<any>}
  */
 async function replaceItemInContainer(container, id, partitionKey, body) {
-  // debugCosmos('replacing item', id, partitionKey, body)
+  debugCosmos('replacing item', container.id, id, partitionKey);
   const { resource } = await container.item(id, partitionKey).replace(body);
   return resource;
 }
@@ -138,7 +160,7 @@ async function replaceItemInContainer(container, id, partitionKey, body) {
  * @returns {Promise<any>}
  */
 async function removeItemFromContainer(container, id, partitionKey) {
-  // debugCosmos('deleting item', id, partitionKey)
+  debugCosmos('deleting item', container.id, id, partitionKey);
   const { resource } = await container.item(id, partitionKey).delete();
   return resource;
 }
@@ -148,18 +170,10 @@ const { client, database, issuesContainer, projectsContainer, usersContainer } =
   await connect();
 
 // export
-export const Issues = {
-  getAll: () => getAllItemsFromContainer(issuesContainer),
-  getById: (id) => readItemFromContainer(issuesContainer, id, id),
-  add: (newItem) => addItemToContainer(issuesContainer, newItem),
-  replace: (issueId, issueData) =>
-    replaceItemInContainer(issuesContainer, issueId, issueId, issueData),
-  remove: (issueId) =>
-    removeItemFromContainer(issuesContainer, issueId, issueId),
-};
 export const Projects = {
   getAll: () => getAllItemsFromContainer(projectsContainer),
-  getById: (id) => readItemFromContainer(projectsContainer, id, id),
+  getById: (projectId) =>
+    readItemFromContainer(projectsContainer, projectId, projectId),
   add: (newItem) => addItemToContainer(projectsContainer, newItem),
   replace: (projectId, projectData) =>
     replaceItemInContainer(
@@ -170,4 +184,28 @@ export const Projects = {
     ),
   remove: (projectId) =>
     removeItemFromContainer(projectsContainer, projectId, projectId),
+};
+export const Issues = {
+  getAll: () => getAllItemsFromContainer(issuesContainer),
+  getAllIssuesForProject: (projectId) =>
+    getAllItemsForProject(issuesContainer, projectId),
+  getById: (projectId, issueId) =>
+    readItemFromContainer(issuesContainer, issueId, projectId + ';' + issueId),
+  add: (newItem) => {
+    newItem._partitionKey = newItem.projectId + ';' + newItem.issueId;
+    return addItemToContainer(issuesContainer, newItem);
+  },
+  replace: (projectId, issueId, issueData) =>
+    replaceItemInContainer(
+      issuesContainer,
+      issueId,
+      projectId + ';' + issueId,
+      issueData
+    ),
+  remove: (projectId, issueId) =>
+    removeItemFromContainer(
+      issuesContainer,
+      issueId,
+      projectId + ';' + issueId
+    ),
 };

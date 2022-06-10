@@ -4,7 +4,7 @@ import validBody from 'valid-body-joi';
 import debug from 'debug';
 import { nanoid } from 'nanoid';
 import Joi from 'joi';
-import { Issues } from '../../core/cosmos.js';
+import { Projects, Issues } from '../../core/cosmos.js';
 
 const debugApi = debug('app:api:issue');
 const router = express.Router();
@@ -25,27 +25,46 @@ router.get(
 );
 
 router.get(
-  '/issue/:issueId',
+  '/project/:projectId/issue/list',
   asyncCatch(async (req, res, next) => {
+    const projectId = req.params.projectId;
+    const issues = await Issues.getAllIssuesForProject(projectId);
+    res.json(issues);
+    debugApi('All issues for project read.');
+  })
+);
+
+router.get(
+  '/project/:projectId/issue/:issueId',
+  asyncCatch(async (req, res, next) => {
+    const projectId = req.params.projectId;
     const issueId = req.params.issueId;
-    const issue = await Issues.getById(issueId);
-    if (issue) {
+    const issue = await Issues.getById(projectId, issueId);
+    if (!issue) {
+      res.status(404).json({ message: 'Issue not found.', projectId, issueId });
+    } else {
       res.json(issue);
       debugApi(`Issue ${issueId} read.`);
-    } else {
-      res.status(404).json({ message: 'Issue not found.', id: issueId });
     }
   })
 );
 
 router.put(
-  '/issue/new',
+  '/project/:projectId/issue/new',
   validBody(issueSchema),
   asyncCatch(async (req, res, next) => {
     const issueId = nanoid();
+    const projectId = req.params.projectId;
+
+    const project = await Projects.getById(projectId);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found.', projectId });
+    }
+
     const newIssue = req.body;
     newIssue.id = issueId;
     newIssue.issueId = issueId;
+    newIssue.projectId = projectId;
     newIssue.type = 'Issue';
 
     const resource = await Issues.add(newIssue);
@@ -55,12 +74,13 @@ router.put(
 );
 
 router.put(
-  '/issue/:issueId',
+  '/project/:projectId/issue/:issueId',
   validBody(issueSchema),
   asyncCatch(async (req, res, next) => {
+    const projectId = req.params.projectId;
     const issueId = req.params.issueId;
     const issueData = req.body;
-    const issue = await Issues.getById(issueId);
+    const issue = await Issues.getById(projectId, issueId);
 
     if (!issue) {
       res.status(404).json({ message: 'Issue not found.', id: issueId });
@@ -68,7 +88,7 @@ router.put(
       for (const key in issueData) {
         issue[key] = issueData[key];
       }
-      const resource = await Issues.replace(issueId, issue);
+      const resource = await Issues.replace(projectId, issueId, issue);
       res.json({ message: 'Issue updated.', id: issueId, resource });
       debugApi(`Issue ${issueId} updated.`);
     }
@@ -76,15 +96,16 @@ router.put(
 );
 
 router.delete(
-  '/issue/:issueId',
+  '/project/:projectId/issue/:issueId',
   asyncCatch(async (req, res, next) => {
+    const projectId = req.params.projectId;
     const issueId = req.params.issueId;
-    const issue = await Issues.getById(issueId);
+    const issue = await Issues.getById(projectId, issueId);
 
     if (!issue) {
       res.status(404).json({ message: 'Issue not found.', id: issueId });
     } else {
-      const resource = await Issues.remove(issueId);
+      const resource = await Issues.remove(projectId, issueId);
       res.json({ message: 'Issue removed.', id: issueId, resource });
       debugApi(`Issue ${issueId} removed.`);
     }

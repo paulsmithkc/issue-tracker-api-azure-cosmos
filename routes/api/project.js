@@ -29,11 +29,11 @@ router.get(
   asyncCatch(async (req, res, next) => {
     const projectId = req.params.projectId;
     const project = await Projects.getById(projectId);
-    if (project) {
+    if (!project) {
+      res.status(404).json({ message: 'Project not found.', id: projectId });
+    } else {
       res.json(issue);
       debugApi(`Project ${projectId} read.`);
-    } else {
-      res.status(404).json({ message: 'Project not found.', id: projectId });
     }
   })
 );
