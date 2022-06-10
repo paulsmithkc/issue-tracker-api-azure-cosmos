@@ -4,6 +4,7 @@ import validBody from 'valid-body-joi';
 import debug from 'debug';
 import { nanoid } from 'nanoid';
 import Joi from 'joi';
+import { isLoggedIn } from '@merlin4/express-auth';
 import { Projects } from '../../core/cosmos.js';
 
 const debugApi = debug('app:api:project');
@@ -17,6 +18,7 @@ const projectSchema = Joi.object({
 
 router.get(
   '/project/list',
+  isLoggedIn(),
   asyncCatch(async (req, res, next) => {
     const projects = await Projects.getAll();
     res.json(projects);
@@ -26,6 +28,7 @@ router.get(
 
 router.get(
   '/project/:projectId',
+  isLoggedIn(),
   asyncCatch(async (req, res, next) => {
     const projectId = req.params.projectId;
     const project = await Projects.getById(projectId);
@@ -40,6 +43,7 @@ router.get(
 
 router.put(
   '/project/new',
+  isLoggedIn(),
   validBody(projectSchema),
   asyncCatch(async (req, res, next) => {
     const projectId = nanoid();
@@ -56,6 +60,7 @@ router.put(
 
 router.put(
   '/project/:projectId',
+  isLoggedIn(),
   validBody(projectSchema),
   asyncCatch(async (req, res, next) => {
     const projectId = req.params.projectId;
@@ -77,6 +82,7 @@ router.put(
 
 router.delete(
   '/project/:projectId',
+  isLoggedIn(),
   asyncCatch(async (req, res, next) => {
     const projectId = req.params.projectId;
     const project = await Projects.getById(projectId);
