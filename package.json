@@ -32,12 +32,14 @@
   "homepage": "https://github.com/paulsmithkc/issue-tracker-api-azure-cosmos#readme",
   "dependencies": {
     "@azure/cosmos": "^3.16.1",
+    "bcrypt": "^5.0.1",
     "config": "^3.3.7",
     "debug": "^4.3.4",
     "express": "^4.18.1",
     "express-async-catch": "^1.0.0",
     "helmet": "^5.1.0",
     "joi": "^17.6.0",
+    "jsonwebtoken": "^8.5.1",
     "morgan": "^1.10.0",
     "nanoid": "^3.3.4",
     "valid-body-joi": "^1.0.0"

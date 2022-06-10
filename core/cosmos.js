@@ -30,17 +30,17 @@ async function connect() {
   debugCosmos(`Created database: ${database.id}`);
 
   // Create the necessary containers
-  const issuesContainer = await createContainer(
-    database,
-    'Issues',
-    '/_partitionKey'
-  );
+  const usersContainer = await createContainer(database, 'Users', '/userId');
   const projectsContainer = await createContainer(
     database,
     'Projects',
     '/projectId'
   );
-  const usersContainer = await createContainer(database, 'Users', '/userId');
+  const issuesContainer = await createContainer(
+    database,
+    'Issues',
+    '/_partitionKey'
+  );
 
   return {
     client,
@@ -73,6 +73,7 @@ async function createContainer(database, containerId, partitionKey) {
  * @returns {Promise<any[]>}
  */
 async function getAllItemsFromContainer(container) {
+  debugCosmos('selecting all items', container.id);
   const querySpec = { query: 'SELECT * FROM c' };
   const query = container.items.query(querySpec);
   const { resources: items } = await query.fetchAll();
@@ -86,6 +87,7 @@ async function getAllItemsFromContainer(container) {
  * @returns {Promise<any[]>}
  */
 async function getAllItemsForProject(container, projectId) {
+  debugCosmos('selecting items by projectId', container.id, projectId);
   const querySpec = {
     query: 'SELECT * FROM c WHERE c.projectId = @projectId',
     parameters: [{ name: '@projectId', value: projectId }],
@@ -100,12 +102,29 @@ async function getAllItemsForProject(container, projectId) {
  * @param {Container} container
  * @param {string} id
  * @returns {Promise<any>}
- * @deprecated Use readItemFromContainer instead.
  */
 async function getItemByIdFromContainer(container, id) {
+  debugCosmos('selecting item by id', container.id, id);
   const querySpec = {
     query: 'SELECT * FROM c WHERE c.id = @id',
     parameters: [{ name: '@id', value: id }],
+  };
+  const query = container.items.query(querySpec);
+  const { resources: items } = await query.fetchAll();
+  return items && items.length ? items[0] : null;
+}
+
+/**
+ * Fetches a specific user by email address.
+ * @param {Container} container
+ * @param {string} email
+ * @returns {Promise<any>}
+ */
+ async function getUserByEmail(container, email) {
+  debugCosmos('selecting user by email', container.id, email);
+  const querySpec = {
+    query: 'SELECT * FROM c WHERE c.email = @email',
+    parameters: [{ name: '@email', value: email }],
   };
   const query = container.items.query(querySpec);
   const { resources: items } = await query.fetchAll();
@@ -170,6 +189,15 @@ const { client, database, issuesContainer, projectsContainer, usersContainer } =
   await connect();
 
 // export
+export const Users = {
+  getAll: () => getAllItemsFromContainer(usersContainer),
+  getById: (userId) => readItemFromContainer(usersContainer, userId, userId),
+  getByEmail: (email) => getUserByEmail(usersContainer, email),
+  add: (newItem) => addItemToContainer(usersContainer, newItem),
+  replace: (userId, userData) =>
+    replaceItemInContainer(usersContainer, userId, userId, userData),
+  remove: (userId) => removeItemFromContainer(usersContainer, userId, userId),
+};
 export const Projects = {
   getAll: () => getAllItemsFromContainer(projectsContainer),
   getById: (projectId) =>

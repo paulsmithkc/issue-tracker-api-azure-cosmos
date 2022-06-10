@@ -7,5 +7,10 @@
     "endpoint": "https://localhost:8081",
     "key": "",
     "databaseId": "IssueTracker"
+  },
+  "auth": {
+    "passwordSaltRounds": 10,
+    "tokenSecretKey": "secret",
+    "tokenExpiresIn": "4h"
   }
 }

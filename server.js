@@ -6,6 +6,7 @@ import debug from 'debug';
 //import cosmos from './core/cosmos.js';
 import projectApi from './routes/api/project.js';
 import issueApi from './routes/api/issue.js';
+import authApi from './routes/api/auth.js';
 
 // create debug channels
 const debugStartup = debug('app:startup');
@@ -22,6 +23,7 @@ app.get('/', (req, res) => res.json({ message: 'Server Running.' }));
 app.get('/ping', (req, res) => res.json({ message: 'Ping.', now: new Date() }));
 app.use('/api', projectApi);
 app.use('/api', issueApi);
+app.use('/api', authApi);
 
 // error handlers
 app.use((req, res, next) => {
@@ -35,6 +37,6 @@ app.use((err, req, res, next) => {
 // start app
 const host = config.get('http.host');
 const port = config.get('http.port');
-app.listen(port, () => 
+app.listen(port, () =>
   debugStartup(`Server running at... http://${host}:${port}/`)
 );

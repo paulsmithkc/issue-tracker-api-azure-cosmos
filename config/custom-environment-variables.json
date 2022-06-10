@@ -9,5 +9,10 @@
     "endpoint": "COSMOS_ENDPOINT",
     "key": "COSMOS_KEY",
     "databaseId": "COSMOS_DATABASE_ID"
+  },
+  "auth": {
+    "passwordSaltRounds": "AUTH_SALT_ROUNDS",
+    "tokenSecretKey": "AUTH_SECRET",
+    "tokenExpiresIn": "AUTH_EXPIRES_IN"
   }
 }
