@@ -75,6 +75,7 @@ router.post(
     res.json({
       message: 'User registered.',
       userId,
+      email,
       token,
       tokenExpiresIn,
     });
@@ -99,6 +100,7 @@ router.post(
       res.json({
         message: 'User logged in.',
         userId,
+        email,
         token,
         tokenExpiresIn,
       });
@@ -148,6 +150,7 @@ router.put(
       res.json({
         message: 'User updated.',
         userId,
+        email: resource.email,
         token,
         tokenExpiresIn,
         // user: _.pick(resource, 'userId', 'email', 'givenName', 'familyName')
