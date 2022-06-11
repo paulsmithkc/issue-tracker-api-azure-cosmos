@@ -1,5 +1,6 @@
 import express from 'express';
 import helmet from 'helmet';
+import cors from 'cors';
 import morgan from 'morgan';
 import config from 'config';
 import debug from 'debug';
@@ -16,6 +17,7 @@ const debugError = debug('app:error');
 // create and configure app
 const app = express();
 app.use(helmet());
+app.use(cors());
 app.use(morgan('tiny'));
 app.use(express.json());
 app.use(authMiddleware(config.get('auth.tokenSecretKey')));

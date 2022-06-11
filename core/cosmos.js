@@ -72,10 +72,10 @@ async function connect() {
  * @returns {Promise<Container>}
  */
 async function createContainer(database, containerId, partitionKey) {
-  const { container } = await database.containers.createIfNotExists({
-    id: containerId,
-    partitionKey: partitionKey,
-  });
+  const { container } = await database.containers.createIfNotExists(
+    { id: containerId, partitionKey: partitionKey },
+    { offerThroughput: 400 }
+  );
   debugCosmos(`Created container: ${container.id}`);
   return container;
 }
