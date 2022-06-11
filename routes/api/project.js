@@ -35,7 +35,7 @@ router.get(
     if (!project) {
       res.status(404).json({ message: 'Project not found.', id: projectId });
     } else {
-      res.json(issue);
+      res.json(project);
       debugApi(`Project ${projectId} read.`);
     }
   })
