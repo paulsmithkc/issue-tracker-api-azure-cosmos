@@ -85,9 +85,14 @@ async function createContainer(database, containerId, partitionKey) {
  * @param {Container} container
  * @returns {Promise<any[]>}
  */
-async function getAllItemsFromContainer(container) {
+async function getAllItemsFromContainer(container, orderBy = null) {
   debugCosmos('selecting all items', container.id);
-  const querySpec = { query: 'SELECT * FROM c' };
+  let sql = 'SELECT * FROM c';
+  if (orderBy) {
+    sql += ' ' + orderBy;
+  }
+
+  const querySpec = { query: sql };
   const query = container.items.query(querySpec);
   const { resources: items } = await query.fetchAll();
   return items;
@@ -99,10 +104,15 @@ async function getAllItemsFromContainer(container) {
  * @param {string} projectId
  * @returns {Promise<any[]>}
  */
-async function getAllItemsForProject(container, projectId) {
+async function getAllItemsForProject(container, projectId, orderBy = null) {
   debugCosmos('selecting items by projectId', container.id, projectId);
+  let sql = 'SELECT * FROM c WHERE c.projectId = @projectId';
+  if (orderBy) {
+    sql += ' ' + orderBy;
+  }
+
   const querySpec = {
-    query: 'SELECT * FROM c WHERE c.projectId = @projectId',
+    query: sql,
     parameters: [{ name: '@projectId', value: projectId }],
   };
   const query = container.items.query(querySpec);
@@ -203,7 +213,7 @@ const { client, database, issuesContainer, projectsContainer, usersContainer } =
 
 // export
 export const Users = {
-  getAll: () => getAllItemsFromContainer(usersContainer),
+  getAll: () => getAllItemsFromContainer(usersContainer, 'ORDER BY c.email'),
   getById: (userId) => readItemFromContainer(usersContainer, userId, userId),
   getByEmail: (email) => getUserByEmail(usersContainer, email),
   add: (newItem) => addItemToContainer(usersContainer, newItem),
@@ -212,7 +222,7 @@ export const Users = {
   remove: (userId) => removeItemFromContainer(usersContainer, userId, userId),
 };
 export const Projects = {
-  getAll: () => getAllItemsFromContainer(projectsContainer),
+  getAll: () => getAllItemsFromContainer(projectsContainer, 'ORDER BY c.title'),
   getById: (projectId) =>
     readItemFromContainer(projectsContainer, projectId, projectId),
   add: (newItem) => addItemToContainer(projectsContainer, newItem),
@@ -227,9 +237,9 @@ export const Projects = {
     removeItemFromContainer(projectsContainer, projectId, projectId),
 };
 export const Issues = {
-  getAll: () => getAllItemsFromContainer(issuesContainer),
+  getAll: () => getAllItemsFromContainer(issuesContainer, 'ORDER BY c.title'),
   getAllIssuesForProject: (projectId) =>
-    getAllItemsForProject(issuesContainer, projectId),
+    getAllItemsForProject(issuesContainer, projectId, 'ORDER BY c.title'),
   getById: (projectId, issueId) =>
     readItemFromContainer(issuesContainer, issueId, projectId + ';' + issueId),
   add: (newItem) => {
