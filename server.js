@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import config from 'config';
 import debug from 'debug';
 import { authMiddleware } from '@merlin4/express-auth';
+import cacheHeaders from './middleware/cacheHeaders.js';
 //import cosmos from './core/cosmos.js';
 import projectApi from './routes/api/project.js';
 import issueApi from './routes/api/issue.js';
@@ -21,6 +22,7 @@ app.use(cors());
 app.use(morgan('tiny'));
 app.use(express.json());
 app.use(authMiddleware(config.get('auth.tokenSecretKey')));
+app.use(cacheHeaders(config.get('cache.maxAgeInSeconds')))
 
 // routes
 app.get('/', (req, res) => res.json({ message: 'Server Running.' }));

@@ -13,5 +13,8 @@
     "passwordSaltRounds": 10,
     "tokenSecretKey": "secret",
     "tokenExpiresIn": "4h"
+  },
+  "cache": {
+    "maxAgeInSeconds": 300
   }
 }

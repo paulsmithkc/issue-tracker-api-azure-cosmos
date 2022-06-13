@@ -14,5 +14,8 @@
     "passwordSaltRounds": "AUTH_SALT_ROUNDS",
     "tokenSecretKey": "AUTH_SECRET",
     "tokenExpiresIn": "AUTH_EXPIRES_IN"
+  },
+  "cache": {
+    "maxAgeInSeconds": "CACHE_MAX_AGE"
   }
 }
