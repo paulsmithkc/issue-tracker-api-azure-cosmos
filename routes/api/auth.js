@@ -9,10 +9,12 @@ import jwt from 'jsonwebtoken';
 import Joi from 'joi';
 import _ from 'lodash';
 import { isLoggedIn } from '@merlin4/express-auth';
+import { cacheDisable } from '../../middleware/cacheDisable.js';
 import { Users } from '../../core/cosmos.js';
 
 const debugApi = debug('app:api:auth');
 const router = express.Router();
+router.use(cacheDisable());
 
 const registerSchema = Joi.object({
   givenName: Joi.string().required(),

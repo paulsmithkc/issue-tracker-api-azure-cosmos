@@ -1,4 +1,4 @@
-export default function cacheHeaders(maxAgeInSeconds) {
+export function cacheMaxAge(maxAgeInSeconds) {
   return (req, res, next) => {
     if (req.method === 'GET') {
       res.set('Cache-control', `max-age=${maxAgeInSeconds}`);
