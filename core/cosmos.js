@@ -1,6 +1,6 @@
 import config from 'config';
 import debug from 'debug';
-import { CosmosClient, Database, Container } from '@azure/cosmos';
+import Cosmos, { CosmosClient, Database, Container } from '@azure/cosmos';
 
 // create debug channels
 const debugCosmos = debug('app:core:cosmos');
@@ -69,12 +69,19 @@ async function connect() {
  * @param {Database} database
  * @param {string} containerId
  * @param {string} partitionKey
+ * @param {Cosmos.UniqueKeyPolicy|undefined} uniqueKeyPolicy
  * @returns {Promise<Container>}
  */
-async function createContainer(database, containerId, partitionKey) {
+async function createContainer(
+  database,
+  containerId,
+  partitionKey,
+  uniqueKeyPolicy
+) {
   const { container } = await database.containers.createIfNotExists({
     id: containerId,
     partitionKey: partitionKey,
+    uniqueKeyPolicy: uniqueKeyPolicy,
     throughput: 400,
   });
   debugCosmos(`Created container: ${container.id}`);
