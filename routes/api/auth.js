@@ -26,7 +26,7 @@ const registerSchema = Joi.object({
 const updateSchema = Joi.object({
   givenName: Joi.string().trim(),
   familyName: Joi.string().trim(),
-  email: Joi.string().email().lowercase().trim(),
+  //email: Joi.string().email().lowercase().trim(),
   password: Joi.string().min(8),
 });
 
