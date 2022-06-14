@@ -3,6 +3,7 @@ import asyncCatch from 'express-async-catch';
 import validBody from 'valid-body-joi';
 import debug from 'debug';
 import { nanoid } from 'nanoid';
+import _ from 'lodash';
 import Joi from 'joi';
 import { isLoggedIn } from '@merlin4/express-auth';
 import { Projects, Issues } from '../../core/cosmos.js';
@@ -66,11 +67,14 @@ router.put(
       return res.status(404).json({ message: 'Project not found.', projectId });
     }
 
+    const now = new Date();
     const newIssue = req.body;
     newIssue.id = issueId;
     newIssue.issueId = issueId;
     newIssue.projectId = projectId;
     newIssue.type = 'Issue';
+    newIssue.createdOn = now;
+    newIssue.createdBy = _.pick(req.auth, 'userId', 'email');
 
     const resource = await Issues.add(newIssue);
     res.json({ message: 'Issue created.', id: issueId, resource });
@@ -94,6 +98,11 @@ router.put(
       for (const key in issueData) {
         issue[key] = issueData[key];
       }
+
+      const now = new Date();
+      issue.lastUpdatedOn = now;
+      issue.lastUpdatedBy = _.pick(req.auth, 'userId', 'email');
+
       const resource = await Issues.replace(projectId, issueId, issue);
       res.json({ message: 'Issue updated.', id: issueId, resource });
       debugApi(`Issue ${issueId} updated.`);
