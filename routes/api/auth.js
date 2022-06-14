@@ -142,6 +142,15 @@ router.put(
       for (const key in userData) {
         if (key === 'password') {
           user.passwordHash = await bcrypt.hash(userData.password, passwordSaltRounds);
+        } else if (key === 'email') {
+          if (userData.email != user.email) {
+            const existingUser = await Users.getByEmail(userData.email);
+            if (existingUser && existingUser.id !== userId) {
+              return res.status(400).json({ message: 'Email already in use.', email: userData.email });
+            } else {
+              user.email = userData.email;
+            }
+          }
         } else {
           user[key] = userData[key];
         }
