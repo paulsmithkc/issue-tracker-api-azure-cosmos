@@ -7,9 +7,10 @@ import debug from 'debug';
 import { authMiddleware } from '@merlin4/express-auth';
 import { cacheMaxAge } from './middleware/cacheMaxAge.js';
 //import cosmos from './core/cosmos.js';
+import authApi from './routes/api/auth.js';
 import projectApi from './routes/api/project.js';
 import issueApi from './routes/api/issue.js';
-import authApi from './routes/api/auth.js';
+import commentApi from './routes/api/comment.js';
 
 // create debug channels
 const debugStartup = debug('app:startup');
@@ -30,6 +31,7 @@ app.get('/ping', (req, res) => res.json({ message: 'Ping.', now: new Date() }));
 app.use('/api', projectApi);
 app.use('/api', issueApi);
 app.use('/api', authApi);
+app.use('/api', commentApi);
 
 // error handlers
 app.use((req, res, next) => {

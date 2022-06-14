@@ -89,6 +89,19 @@ async function createContainer(
 }
 
 /**
+ * Queries a container items and return matching items as an array.
+ * @param {Container} container
+ * @param {Cosmos.SqlQuerySpec} querySpec
+ * @returns {Promise<any[]>}
+ */
+async function queryItemsFromContainer(container, querySpec) {
+  debugCosmos('querying container ', container.id);
+  const query = container.items.query(querySpec);
+  const { resources: items } = await query.fetchAll();
+  return items;
+}
+
+/**
  * Fetches all items from a container and returns them as an array.
  * @param {Container} container
  * @returns {Promise<any[]>}
@@ -101,28 +114,6 @@ async function getAllItemsFromContainer(container, orderBy = null) {
   }
 
   const querySpec = { query: sql };
-  const query = container.items.query(querySpec);
-  const { resources: items } = await query.fetchAll();
-  return items;
-}
-
-/**
- * Fetches items from a container, for a specific project, and returns them as an array.
- * @param {Container} container
- * @param {string} projectId
- * @returns {Promise<any[]>}
- */
-async function getAllItemsForProject(container, projectId, orderBy = null) {
-  debugCosmos('selecting items by projectId', container.id, projectId);
-  let sql = 'SELECT * FROM c WHERE c.projectId = @projectId';
-  if (orderBy) {
-    sql += ' ' + orderBy;
-  }
-
-  const querySpec = {
-    query: sql,
-    parameters: [{ name: '@projectId', value: projectId }],
-  };
   const query = container.items.query(querySpec);
   const { resources: items } = await query.fetchAll();
   return items;
@@ -245,13 +236,27 @@ export const Projects = {
     removeItemFromContainer(projectsContainer, projectId, projectId),
 };
 export const Issues = {
-  getAll: () => getAllItemsFromContainer(issuesContainer, 'ORDER BY c.title'),
+  getAll: () =>
+    queryItemsFromContainer(issuesContainer, {
+      query: 'SELECT * FROM c WHERE c.type = @type ORDER BY c.createdOn DESC',
+      parameters: [{ name: '@type', value: 'Issue' }],
+    }),
   getAllIssuesForProject: (projectId) =>
-    getAllItemsForProject(issuesContainer, projectId, 'ORDER BY c.title'),
+    queryItemsFromContainer(issuesContainer, {
+      query:
+        'SELECT * FROM c ' +
+        'WHERE c.projectId = @projectId AND c.type = @type ' +
+        'ORDER BY c.createdOn DESC',
+      parameters: [
+        { name: '@projectId', value: projectId },
+        { name: '@type', value: 'Issue' },
+      ],
+    }),
   getById: (projectId, issueId) =>
     readItemFromContainer(issuesContainer, issueId, projectId + ';' + issueId),
   add: (newItem) => {
     newItem._partitionKey = newItem.projectId + ';' + newItem.issueId;
+    newItem.type = 'Issue';
     return addItemToContainer(issuesContainer, newItem);
   },
   replace: (projectId, issueId, issueData) =>
@@ -267,4 +272,28 @@ export const Issues = {
       issueId,
       projectId + ';' + issueId
     ),
+};
+export const IssueComments = {
+  getAll: () =>
+    queryItemsFromContainer(issuesContainer, {
+      query: 'SELECT * FROM c WHERE c.type = @type ORDER BY c.createdOn ASC',
+      parameters: [{ name: '@type', value: 'Comment' }],
+    }),
+  getAllCommentsForIssue: (projectId, issueId) =>
+    queryItemsFromContainer(issuesContainer, {
+      query:
+        'SELECT * FROM c ' +
+        'WHERE c.projectId = @projectId AND c.issueId = @issueId AND c.type = @type ' +
+        'ORDER BY c.createdOn ASC',
+      parameters: [
+        { name: '@projectId', value: projectId },
+        { name: '@issueId', value: issueId },
+        { name: '@type', value: 'Comment' },
+      ],
+    }),
+  add: (newItem) => {
+    newItem._partitionKey = newItem.projectId + ';' + newItem.issueId;
+    newItem.type = 'Comment';
+    return addItemToContainer(issuesContainer, newItem);
+  },
 };
