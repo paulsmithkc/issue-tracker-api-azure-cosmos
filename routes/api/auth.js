@@ -61,6 +61,7 @@ router.post(
       return res.status(400).json({ message: 'Email already in use.', email });
     }
 
+    const now = new Date();
     const newUser = {
       id: userId,
       userId,
@@ -69,6 +70,8 @@ router.post(
       email,
       passwordHash: await bcrypt.hash(password, passwordSaltRounds),
       type: 'User',
+      registeredOn: now,
+      lastLoginOn: now,
     };
 
     const token = await generateToken(newUser);
@@ -99,6 +102,13 @@ router.post(
     } else {
       const { userId } = user;
       const token = await generateToken(user);
+
+      // update lastLogin timestamp
+      const now = new Date();
+      user.lastLoginOn = now;
+      await Users.replace(userId, user);
+
+      // send response
       res.json({
         message: 'User logged in.',
         userId,
@@ -121,7 +131,7 @@ router.get(
     if (!user) {
       res.status(404).json({ message: 'User not found.', userId });
     } else {
-      res.json(_.pick(user, 'userId', 'email', 'givenName', 'familyName'));
+      res.json(_.pick(user, 'userId', 'email', 'givenName', 'familyName', 'registeredOn', 'lastLoginOn'));
       debugApi(`User ${userId} read.`);
     }
   })
