@@ -17,21 +17,21 @@ const router = express.Router();
 router.use(cacheDisable());
 
 const registerSchema = Joi.object({
-  givenName: Joi.string().required(),
-  familyName: Joi.string().required(),
-  email: Joi.string().email().required(),
+  givenName: Joi.string().trim().required(),
+  familyName: Joi.string().trim().required(),
+  email: Joi.string().email().lowercase().trim().required(),
   password: Joi.string().min(8).required(),
 });
 
 const updateSchema = Joi.object({
-  givenName: Joi.string(),
-  familyName: Joi.string(),
-  email: Joi.string().email(),
+  givenName: Joi.string().trim(),
+  familyName: Joi.string().trim(),
+  email: Joi.string().email().lowercase().trim(),
   password: Joi.string().min(8),
 });
 
 const loginSchema = Joi.object({
-  email: Joi.string().email().required(),
+  email: Joi.string().email().lowercase().trim().required(),
   password: Joi.string().required(),
 });
 

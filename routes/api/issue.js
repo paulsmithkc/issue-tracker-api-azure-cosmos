@@ -11,9 +11,9 @@ const debugApi = debug('app:api:issue');
 const router = express.Router();
 
 const issueSchema = Joi.object({
-  title: Joi.string().required(),
-  description: Joi.string().required(),
-  priority: Joi.string().allow('').required(), // optional
+  title: Joi.string().trim().required(),
+  description: Joi.string().trim().required(),
+  priority: Joi.string().trim().allow('').required(), // optional
 });
 
 router.get(
